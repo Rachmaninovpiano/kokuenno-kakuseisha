@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>黒炎の覚醒者 ～第一話～</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #a200ff;
+      --secondary: #ff3300;
+      --bg: #050508;
+      --text: #e0d5c5;
+      --glass-bg: rgba(10, 10, 15, 0.75);
+      --glass-border: rgba(150, 50, 255, 0.3);
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: "Noto Serif JP", serif;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+      -webkit-tap-highlight-color: transparent; /* Remove tap gray box */
+    }
+    
+    /* Reading Progress Bar */
+    #progress-container {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 3px;
+      background: rgba(255, 255, 255, 0.05);
+      z-index: 1000;
+      pointer-events: none;
+    }
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #330066, #ff3300, #cc00ff);
+      box-shadow: 0 0 10px var(--primary);
+      transition: width 0.1s ease-out;
+    }
+
+    /* Splash Screen Cover Image (with perspective for gyro) */
+    .bg-wrapper {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      perspective: 1000px;
+      z-index: -2;
+      overflow: hidden;
+    }
+
+    .bg-cover {
+      position: absolute;
+      top: -5%; left: -5%; width: 110%; height: 110%;
+      background-image: url('void_flame_mobile.png');
+      background-size: cover;
+      background-position: center 20%;
+      transform: scale(1.05);
+      transition: transform 0.1s ease-out;
+    }
+    
+    .bg-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: linear-gradient(
+        to bottom, 
+        rgba(5, 5, 10, 0.2) 0%, 
+        rgba(5, 5, 10, 0.7) 40%, 
+        rgba(0, 0, 5, 1) 100%
+      );
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    #particles {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      bottom: -10px;
+      width: 4px; height: 4px;
+      background: var(--primary);
+      box-shadow: 0 0 15px 3px var(--primary), 0 0 30px 5px var(--secondary);
+      border-radius: 50%;
+      opacity: 0;
+      animation: floatUp linear forwards;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1) translateX(0); opacity: 0; filter: hue-rotate(0deg); }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.5; }
+      100% { transform: translateY(-110vh) scale(0) translateX(20px); opacity: 0; filter: hue-rotate(40deg); }
+    }
+
+    /* Layout Containers */
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding-top: 55vh;
+      padding-bottom: 90px;
+    }
+    
+    .hero {
+      position: absolute;
+      top: 20vh;
+      left: 0; width: 100%;
+      text-align: center;
+      padding: 0 20px;
+      z-index: 5;
+    }
+    
+    .hero-subtitle {
+      font-size: 0.85rem;
+      letter-spacing: 0.4em;
+      color: rgba(220, 200, 255, 0.9);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+      opacity: 0;
+      animation: fadeIn 2s 0.2s forwards;
+    }
+    
+    .hero-title {
+      font-size: 2.6rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff4500, #cc00ff, #aa00ff);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.05em;
+      filter: drop-shadow(0px 0px 15px rgba(162, 0, 255, 0.6));
+      opacity: 0;
+      animation: fadeIn 2s 0.8s forwards, flameText 5s linear infinite;
+    }
+
+    @keyframes flameText {
+      0% { background-position: 0% center; }
+      100% { background-position: 200% center; }
+    }
+    
+    @keyframes fadeIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: -15vh;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.8rem;
+      letter-spacing: 0.4em;
+      opacity: 0;
+      animation: pulseAndFadeIn 2.5s 2s infinite forwards;
+    }
+
+    @keyframes pulseAndFadeIn {
+      0%, 100% { opacity: 0.3; transform: translate(-50%, 0); text-shadow: 0 0 5px var(--primary); }
+      50% { opacity: 0.9; transform: translate(-50%, 10px); text-shadow: 0 0 20px var(--primary); }
+    }
+
+    .novel-content {
+      background: #000;
+      border-radius: 35px 35px 0 0;
+      position: relative;
+      z-index: 10;
+      box-shadow: 0 -20px 40px rgba(0,0,0,0.9);
+      overflow: hidden;
+    }
+    
+    .top-bar {
+      width: 100%;
+      height: 30px;
+      background: rgba(10, 10, 12, 0.9);
+      border-radius: 35px 35px 0 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .top-bar::before {
+      content: "";
+      width: 40px; height: 4px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+    }
+    
+    .episode-title {
+      text-align: center;
+      font-size: 1.1rem;
+      color: rgba(255, 220, 150, 0.9);
+      margin: 30px 0 10px;
+      letter-spacing: 0.15em;
+      font-weight: 400;
+    }
+
+    /* Webtoon-style Visual Blocks */
+    .scene-block {
+      margin-bottom: 60px;
+    }
+
+    .scene-img-container {
+      width: 100%;
+      margin: 20px 0;
+      position: relative;
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 1.2s ease, transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    
+    .scene-img-container.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .scene-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+    }
+
+    .scene-overlay-text {
+      position: absolute;
+      bottom: 10%;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      background: linear-gradient(to right, transparent, rgba(0,0,0,0.8) 20%, rgba(0,0,0,0.8) 80%, transparent);
+      padding: 15px 0;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.15em;
+      text-shadow: 0 0 10px rgba(162, 0, 255, 0.8), 0 0 20px rgba(255,0,0,0.8);
+      font-style: italic;
+    }
+
+    /* Text areas */
+    .text-area {
+      padding: 0 25px;
+    }
+
+    .scene-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      letter-spacing: 0.35em;
+      color: var(--secondary);
+      border-left: 2px solid var(--secondary);
+      padding-left: 10px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      font-weight: 700;
+      opacity: 0;
+      transition: all 0.8s ease;
+    }
+    .scene-tag.visible { opacity: 1; }
+
+    .novel-text p {
+      line-height: 2.3;
+      font-size: 1.05rem;
+      margin-bottom: 1.6em;
+      letter-spacing: 0.08em;
+      color: rgba(220, 220, 230, 0.9);
+      opacity: 0;
+      transform: translateY(15px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .novel-text p.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .quote {
+      display: block;
+      border-left: 3px solid var(--primary);
+      padding: 20px;
+      margin: 2.5em 0;
+      background: linear-gradient(90deg, rgba(80, 0, 150, 0.3) 0%, rgba(0,0,0,0) 100%);
+      color: rgba(240, 230, 255, 1);
+      font-weight: 700;
+      text-indent: 0;
+      letter-spacing: 0.1em;
+      position: relative;
+      border-radius: 0 8px 8px 0;
+      font-size: 1.15rem;
+      text-shadow: 0 0 8px rgba(162, 0, 255, 0.6);
+      opacity: 0;
+      transform: translateX(-15px);
+      transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    
+    .quote.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    
+    .quote.impact {
+      border-left-color: var(--secondary);
+      background: linear-gradient(90deg, rgba(255, 51, 0, 0.2) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .quote::before {
+      content: "";
+      position: absolute;
+      left: -3px; top: 0; bottom: 0; width: 3px;
+      background: linear-gradient(to bottom, #cc00ff, #ff3300, #cc00ff);
+      background-size: 100% 200%;
+      animation: magicGlow 2s linear infinite;
+      box-shadow: 0 0 20px var(--primary);
+    }
+    
+    .quote.impact::before {
+      box-shadow: 0 0 20px var(--secondary);
+    }
+
+    .chapter-break {
+      text-align: center;
+      margin: 40px 0;
+      opacity: 0;
+      transition: opacity 1.5s ease;
+    }
+    .chapter-break.visible { opacity: 1; }
+    .chapter-break span {
+      display: inline-block;
+      width: 4px; height: 4px;
+      background: var(--primary);
+      border-radius: 50%;
+      margin: 0 10px;
+      box-shadow: 0 0 10px var(--primary);
+    }
+    
+    .end-mark {
+      text-align: center;
+      margin-top: 50px;
+      color: var(--primary);
+      font-size: 1.5rem;
+      letter-spacing: 0.6em;
+      opacity: 0;
+      transition: opacity 1.5s;
+    }
+    .end-mark.visible { opacity: 0.8; }
+    
+    .end-text {
+      text-align: center;
+      font-size: 0.8rem;
+      margin-top: 15px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.2em;
+    }
+
+    /* Secret Ruby (Tap to Reveal) Elements */
+    .secret-ruby {
+      position: relative;
+      cursor: pointer;
+      display: inline-block;
+      border-bottom: 1px dashed rgba(162, 0, 255, 0.5);
+      transition: all 0.3s;
+      padding-bottom: 2px;
+    }
+    .secret-ruby .true-meaning {
+      position: absolute;
+      bottom: calc(100% + 5px); left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: rgba(10,0,20,0.95);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      white-space: nowrap;
+      border: 1px solid var(--primary);
+      box-shadow: 0 0 15px var(--primary);
+      font-weight: 700;
+    }
+    /* Arrow below ruby popup */
+    .secret-ruby .true-meaning::after {
+      content: "";
+      position: absolute;
+      top: 100%; left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: var(--primary) transparent transparent transparent;
+    }
+    .secret-ruby.revealed {
+      color: #dfb2ff;
+      text-shadow: 0 0 10px var(--primary);
+      border-bottom-color: transparent;
+    }
+    .secret-ruby.revealed .true-meaning {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Double Tap Dark Flame Explosion */
+    .double-tap-flame {
+      position: fixed;
+      pointer-events: none;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(204,0,255,0.9) 0%, rgba(204,0,255,0) 60%);
+      transform: translate(-50%, -50%) scale(0);
+      animation: explodeFlame 0.7s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+      z-index: 9999;
+      mix-blend-mode: screen;
+      filter: blur(5px);
+    }
+    @keyframes explodeFlame {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 1; box-shadow: 0 0 50px #ff3300; }
+      100% { transform: translate(-50%, -50%) scale(5); opacity: 0; box-shadow: 0 0 200px #cc00ff; }
+    }
+
+    /* Screen Shake Animation */
+    @keyframes screenShake {
+      0% { transform: translate(1px, 1px) rotate(0deg); }
+      10% { transform: translate(-1px, -2px) rotate(-1deg); }
+      20% { transform: translate(-3px, 0px) rotate(1deg); }
+      30% { transform: translate(3px, 2px) rotate(0deg); }
+      40% { transform: translate(1px, -1px) rotate(1deg); }
+      50% { transform: translate(-1px, 2px) rotate(-1deg); }
+      60% { transform: translate(-3px, 1px) rotate(0deg); }
+      70% { transform: translate(3px, 1px) rotate(-1deg); }
+      80% { transform: translate(-1px, -1px) rotate(1deg); }
+      90% { transform: translate(1px, 2px) rotate(0deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    .shake-active {
+      animation: screenShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; width: 100%;
+      background: rgba(5, 5, 8, 0.95);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+      z-index: 1000;
+      box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .nav-btn {
+      color: rgba(255,255,255,0.4);
+      font-size: 0.65rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      transition: color 0.3s;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+    }
+    .nav-btn.active {
+      color: #dfb2ff;
+      text-shadow: 0 0 10px rgba(204,0,255,0.8);
+    }
+    .auto-scroll-btn.scrolling {
+      color: var(--secondary);
+      text-shadow: 0 0 10px var(--secondary);
+      animation: pulseObj 1s infinite alternate;
+    }
+    @keyframes pulseObj {
+      from { transform: scale(1); }
+      to { transform: scale(1.15); }
+    }
+    .nav-icon {
+      font-size: 1.3rem;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="progress-container"><div id="progress-bar"></div></div>
+
+  <div class="bg-wrapper">
+    <div class="bg-cover" id="parallax-bg"></div>
+  </div>
+  <div class="bg-overlay"></div>
+  <div id="particles"></div>
+
+  <div class="container" id="main-container">
+    <div class="hero">
+      <div class="hero-subtitle">黒炎の覚醒者　第一巻</div>
+      <h1 class="hero-title">黒炎の覚醒者</h1>
+      <div class="hero-subtitle" style="margin-top: 15px; font-size: 0.75rem; color: rgba(255,255,255,0.6)">～世界の理を壊す者よ、汝の名は混沌～</div>
+      <div class="scroll-indicator">SCROLL TO AWAKEN<br>↓</div>
+    </div>
+
+    <main class="novel-content">
+      <div class="top-bar"></div>
+      <div class="episode-title">第一話　転生、拒絶、そして泥の匂い</div>
+      
+      <!-- Tutorial Tip -->
+      <p style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.7rem; letter-spacing: 0.1em; margin-bottom: 20px;">
+        【Tap】点線のある文字をタップで見えざる真実が顕現する。<br>
+        【Double Tap】空白を二度叩けば、黒炎が爆ぜる。
+      </p>
+
+      <!-- Scene 01 -->
+      <div class="scene-block">
+        <div class="text-area">
+          <div class="scene-tag">Scene 01 ／ 転生</div>
+          <div class="novel-text">
+            <p>最後に見えたのは、雨に濡れたアスファルトと、迫り来るけたたましいヘッドライトだった。</p>
+            <p>クラクションの音が鼓膜を劈（つんざ）く前に、次の瞬間には、何も無かった。</p>
+            <p>痛みはなかった。音もなかった。ただ、果てしなく続く白い空間があった。</p>
+          </div>
+        </div>
+
+        <div class="scene-img-container">
+          <img src="scene_01b.png" alt="半透明の手" class="scene-img">
+          <div class="scene-overlay-text">「……透けてるな」</div>
+        </div>
+
+        <div class="text-area">
+          <div class="novel-text">
+            <p>「死んだな」</p>
+            <p>声が聞こえた。それは他でもない、自分自身の声だった。<br>低く、乾いた、一切の感情が乗り切らない声。</p>
+            <p>黒瀬虚無（くろせ　こむ）は、ゆっくりと己の手のひらを見つめた。<br>そこにあるべきはずの肉感がなく、指先は半透明だった。指の向こうに、真っ白な床が透けて見えている。<br>——なるほど。本当に死んだらしい。</p>
+            <p>感慨はなかった。驚出すらなかった。二十一年間、誰かに必要とされた記憶も、誰かを必要とした記憶も、ほとんど持たない人間にとって、死という出来事はある意味で「日常の延長」のような、奇妙なほど静かなものだった。</p>
+            <p>己の死を、まるで他人のことのように分析し終えると、彼はゆっくりと顔を上げた。</p>
+          </div>
+        </div>
+
+        <div class="scene-img-container">
+          <img src="scene_01.png" alt="転生" class="scene-img">
+          <div class="scene-overlay-text">「……賑やかな場所だな」</div>
+        </div>
+
+        <div class="text-area">
+          <div class="novel-text">
+            <p>白い玉座に、何かが座っていた。無数の歯車と光の輪が交差する中に、人の形をしたものが浮かんでいる。</p>
+            <p>顔はない。あるのは眩しすぎて直視できない光の輪郭だけだ。<br>その存在は、億を超える年月の重みを、息をするように纏っていた。</p>
+            <p><span class="secret-ruby" onclick="revealRuby(this)">神<span class="true-meaning">システム</span></span>——と呼ぶべきものが、そこにいた。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chapter-break"><span></span><span></span><span></span></div>
+      
+      <!-- Scene 02 -->
+      <div class="scene-block">
+        <div class="text-area">
+          <div class="scene-tag">Scene 02 ／ 拒絶</div>
+          <div class="novel-text">
+            <p>「お前は死んだ。本来ならば魂の輪廻へ還る身だが、特例として新たな世界への切符を与えよう」</p>
+            <p>神は言った。<br>声というより、宇宙そのものが収縮して直接脳内に響くような圧倒的な圧力だった。虚無以外の人間なら、その一言だけで五体投地していただろう。</p>
+            <p>「そしてお前には、あの世界で生き抜くための特別な力を、<span class="secret-ruby" onclick="revealRuby(this)">チート<span class="true-meaning">理外の特権</span></span>を与えよう」</p>
+          </div>
+        </div>
+
+        <div class="scene-img-container">
+          <img src="scene_02b.png" alt="神の申し出" class="scene-img">
+          <div class="scene-overlay-text">「力か、富か、知識か」</div>
+        </div>
+
+        <div class="text-area">
+          <div class="novel-text">
+            <p>神の御手から、一つの光のオーブがふわりと浮かび上がった。</p>
+            <p>「大陸を焦土と化す無双の魔力か。万物を創造し従える絶対の王権か。それとも神すらも欺く究極の英知か。己の望むものを一つ、選ぶがいい」</p>
+            <p>その甘美な誘惑に、虚無は、少しだけ考えた。<br>三秒。<br>それから退屈そうに口を開いた。</p>
+          </div>
+        </div>
+
+        <div class="scene-img-container">
+          <img src="scene_02.png" alt="拒絶" class="scene-img">
+          <div class="scene-overlay-text">「いらない」</div>
+        </div>
+
+        <div class="text-area">
+          <div class="novel-text">
+            <p>ピタリと、世界から音が消えた。</p>
+            <p>沈黙が落ちた。<br>億年生きた神が、初めて沈黙した。</p>
+            <p>「……なんと言った」</p>
+            
+            <div class="quote impact trigger-shake">「い・ら・な・い、と言いました。聞こえませんでしたか」</div>
+            
+            <p>「お前は——俺の与えるチートを、断ると言うのか。異世界転生の、最初の特権を」</p>
+            
+            <div class="quote">「そもそも転生を頼んだ覚えもないですが」</div>
+            
+            <p>神が言葉を失っていた。宇宙が始まって以来、神という存在が『想定外』に直面した初めての瞬間だった。</p>
+            <p>「……では、何も与えん。ただの凡人として、あの過酷な世界でどうなるか」</p>
+            
+            <div class="quote">「それでいいです」</div>
+            
+            <p>「後悔するぞ。あの世界は力こそが絶対の理（ことわり）だぞ」</p>
+            
+            <p>「しません」と即答し、虚無は、もう一度だけ自分の手を見た。<br>半透明の、何も持たない手。<br>何も持たないことに、彼は慣れていた。</p>
+            
+            <div class="quote">「俺は、俺が俺である以上のものを求めたことがない。それは向こうの世界でも、こっちの世界でも、変わりません」</div>
+            
+            <p>神が長い沈黙の後、苛立ちと呆れを混ぜて呟いた。</p>
+            <p>「……まったく。お前のような人間は——」</p>
+            <p>光が極限まで収縮した。世界が強引に折り畳まれるように、虚無の意識が引き延ばされ、強烈に圧縮され——消えた。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chapter-break"><span></span><span></span><span></span></div>
+      
+      <!-- Scene 03 -->
+      <div class="scene-block">
+        <div class="text-area">
+          <div class="scene-tag">Scene 03 ／ 泥の匂い</div>
+          <div class="novel-text">
+            <p>目覚めたのは、生温かい風が吹く麦畑の中だった。</p>
+            <p>虚無——今はその名のまま、<span class="secret-ruby" onclick="revealRuby(this)">ヴォイド・クロス・ナイトシェード<span class="true-meaning">虚無を交差させる夜の影</span></span>と呼ばれることになる少年は——仰向けに倒れたまま、知らない異界の空を見ていた。</p>
+            <p>空は、地球のそれよりも深く、毒々しいほどの群青だった。太陽が二つある。月の輪が三重になって地平線の彼方にかかっている。鼻を突くのは、泥と麦の混じった、酷く土臭い匂いだった。</p>
+            <p>そして。皺の多い、しかし若々しい眼光をした農夫の顔が視界に入り込んだ。老人はただ黙って彼に固いパンと水筒を与え、「食え」とだけ言うと、身の上を何も聞かずに農作業へ戻っていった。</p>
+            
+            <div class="quote">——そうか、俺はまだ、ここにいるのか。</div>
+          </div>
+        </div>
+
+        <div class="scene-img-container">
+          <img src="scene_03b.png" alt="異界の空" class="scene-img">
+          <div class="scene-overlay-text">「二つの太陽か」</div>
+        </div>
+
+        <div class="text-area">
+          <div class="novel-text">
+            <p>その日から、虚無は老人の小屋で世話になりながら、この世界の『常識』をあっという間に理解した。<br>ここはどうやら、一部の特権階級だけが『理力』と呼ばれる魔法を操り、持たざる者を支配する「ゾット帝国」の辺境らしい。</p>
+            <p>だが彼にとって、そんな力や社会構造はどうでもいいことだった。<br>神から何も受け取らなかった自分が、この世界でどうなるのか。</p>
+            <p>その夜、虚無は己の中に『何か』が巣食っていることに気づいた。</p>
+          </div>
+        </div>
+
+        <div class="scene-img-container">
+          <img src="scene_03.png" alt="泥の匂い" class="scene-img">
+          <div class="scene-overlay-text">「理力（ことわり）とやらに縛られない力か。<br>——悪くない」</div>
+        </div>
+
+        <div class="text-area">
+          <div class="novel-text">
+            <p>ドクン、ドクン、と心音と同調して明滅する、暗く深い力。<br>右手を月の光の下へかざすと、そこから音もなく、静かに『黒い炎』が立ち昇った。</p>
+            <p>熱はない。<br>ただ、周囲の光を暴力的に喰らい尽くし、あらゆる存在の色彩を奪い取るような、圧倒的な『<span class="secret-ruby" onclick="revealRuby(this)">虚（うろ）<span class="true-meaning">ヴォイドフレア</span></span>』の顕現だった。</p>
+            <p>神の与えた『チート』などではない。<br>ただ彼が転生する際に、この世界の因果律そのものを無意識の内に「拒絶」した結果として生まれた、完全なる『バグ』の産物。</p>
+            <p>虚無は感情一つ揺らさず、その黒炎を見つめていた。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chapter-break"><span></span><span></span><span></span></div>
+      
+      <!-- Scene 04 -->
+      <div class="scene-block">
+        <div class="text-area">
+          <div class="scene-tag">Scene 04 ／ 圧倒的蹂躙</div>
+          <div class="novel-text">
+            <p>翌朝。平穏だった辺境の村は、突如として無残に踏みにじられた。<br>激しい馬の嘶きと砂埃を上げて現れたのは、白銀の十字が入ったゾット帝国の紋章を掲げた徴税部隊。完全武装の三十名の兵士と、ローブを羽織った宮廷魔法使いたち。</p>
+            <p>「税が足りんぞ！ 払えぬ奴は娘でも命でも置いていけ！」</p>
+            <p>部隊長が冷酷に笑いながら剣を抜き、反抗しようとした村の男を馬の蹄で容赦なく蹴り飛ばす。</p>
+            <p>村人たちが絶望と恐怖に泣き叫び震える中。<br>虚無は、風に揺れる麦畑の中から、ゆっくりとだるそうに歩み出た。<br>顔には、何の感情もない。ただ酷く退屈そうな、冷めた瞳だけがあった。</p>
+            <p>「……なんだ貴様は！ 平民の分際でその目は何だ！ 殺せ！」</p>
+            <p>部隊長が怒りのままに叫び、兵士たちから一斉に矢の雨が放たれる。<br>さらに後方の魔法使いたちが高速詠唱を完了し、爆炎の魔法弾と空間を凍らせる氷槍が、容赦なく虚無の体を空間ごと抉り取ろうと殺到した——。</p>
+          </div>
+        </div>
+
+        <div class="scene-img-container">
+          <img src="scene_04b.png" alt="無慈悲な魔法攻撃" class="scene-img">
+          <div class="scene-overlay-text">「……うるさいな」</div>
+        </div>
+
+        <div class="text-area">
+          <div class="novel-text">
+            <p>だが。</p>
+            <p>そのすべては、虚無の体に触れる一寸前で、文字通り『<span class="secret-ruby" onclick="revealRuby(this)">消滅（ゼロ）<span class="true-meaning">全拒絶の発動</span></span>』になった。</p>
+            <p>「……は？」</p>
+            <p>爆発も起きない。氷の砕ける音もしない。<br>ただ、そこにあったはずの圧倒的な破壊のエネルギーが、存在しなかったかのように「無」へと還ったのだ。</p>
+            <p>部隊長の手から剣が滑り落ちる。</p>
+            
+            <div class="quote trigger-shake impact">「俺は何も求めない。ただ、お前たちが俺の視界に入ることがひたすらに——不愉快だ」</div>
+          </div>
+        </div>
+
+        <div class="scene-img-container">
+          <img src="scene_04.png" alt="蹂躙" class="scene-img">
+          <div class="scene-overlay-text">「こんなものか。<br>この世界の理（ルール）とやらは」</div>
+        </div>
+
+        <div class="text-area">
+          <div class="novel-text">
+            <p>虚無が静かに右手を振るった。</p>
+            <p>広がったのは、漆黒の炎。<br>否、それは炎の形をした、あらゆる概念を喰い尽くす『拒絶』の波動。<br>絶対無の波紋が、音もなく兵士たちを飲み込んだ。</p>
+            <p>鉄の鎧も、鋼の剣も、放たれた高位の理力魔法も、そして三十名の兵士の意志すらも。</p>
+            <p>全てが無へと回帰し、兵士たちは白目を剥いて、まるで糸の切れた操り人形のように次々とその場に崩れ落ちた。<br>ただの一人も殺されてはいない。外傷も一切ない。<br>彼らの『戦意』という概念そのものを、黒炎が完全に消し去ったに過ぎなかった。</p>
+            <p>圧倒的な死地に似た静寂の中、村人たちが事態を理解できずに言葉を失って震え上がっている。</p>
+            <p>そんな彼らを振り返りもせず、虚無はただ、朝の眩しい太陽を見上げながら、退屈そうに一つ大きな欠伸（あくび）をした。</p>
+
+            <div class="end-mark">✦ ✦ ✦</div>
+            <p class="end-text">第一話　了</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="#" class="nav-btn"><span class="nav-icon">≡</span>目次</a>
+    <a onclick="toggleAutoScroll()" class="nav-btn auto-scroll-btn" id="autoScrollBtn"><span class="nav-icon">⏷</span>自動スクロール</a>
+    <a href="#" class="nav-btn active"><span class="nav-icon">📖</span>本編</a>
+    <a href="#" class="nav-btn"><span class="nav-icon">➡</span>次話</a>
+  </nav>
+
+  <script>
+    // -------------------------
+    // 1. Reading Progress Bar
+    // -------------------------
+    window.addEventListener('scroll', () => {
+      const scrollTotal = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollRatio = window.scrollY / scrollTotal;
+      document.getElementById('progress-bar').style.width = `${scrollRatio * 100}%`;
+    });
+
+    // -------------------------
+    // 2. Intersection Observer (Fade in & Screen Shake)
+    // -------------------------
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          
+          // 特定のセリフが画面に入ったときに画面を揺らす＆バイブレーション
+          if (entry.target.classList.contains('trigger-shake') && !entry.target.dataset.shaken) {
+            entry.target.dataset.shaken = 'true';
+            document.body.classList.add('shake-active');
+            
+            // スマホのバイブレーション機能 (対応ブラウザのみ)
+            if (navigator.vibrate) {
+              navigator.vibrate([100, 50, 200]); // ﾀﾀｯ ﾀｰﾝ!と揺れる
+            }
+
+            setTimeout(() => {
+              document.body.classList.remove('shake-active');
+            }, 400);
+          }
+        }
+      });
+    }, { root: null, rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
+
+    const elementsToObserve = document.querySelectorAll('.novel-text p, .quote, .scene-tag, .chapter-break, .end-mark, .scene-img-container');
+    elementsToObserve.forEach(el => observer.observe(el));
+
+    // -------------------------
+    // 3. Interactive Ruby / Hidden Text
+    // -------------------------
+    function revealRuby(el) {
+      el.classList.add('revealed');
+      // 軽く振動
+      if (navigator.vibrate) navigator.vibrate(30);
+      
+      // 数秒後に元に戻る
+      setTimeout(() => {
+        el.classList.remove('revealed');
+      }, 3000);
+    }
+
+    // -------------------------
+    // 4. Double Tap Effect (Dark Flame Explosion)
+    // -------------------------
+    let lastTap = 0;
+    document.addEventListener('touchend', function(e) {
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+      
+      if (tapLength < 500 && tapLength > 0) {
+        // ダブルタップ判定
+        e.preventDefault();
+        spawnFlameExplosion(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+      }
+      lastTap = currentTime;
+    });
+
+    // PC用にダブルクリックも対応
+    document.addEventListener('dblclick', function(e) {
+      spawnFlameExplosion(e.clientX, e.clientY);
+    });
+
+    function spawnFlameExplosion(x, y) {
+      const flame = document.createElement('div');
+      flame.classList.add('double-tap-flame');
+      
+      // サイズ調整
+      flame.style.width = '100px';
+      flame.style.height = '100px';
+      flame.style.left = `${x}px`;
+      flame.style.top = `${y}px`;
+      
+      document.body.appendChild(flame);
+      
+      // 激しく振動
+      if (navigator.vibrate) navigator.vibrate(100);
+
+      setTimeout(() => {
+        flame.remove();
+      }, 700);
+    }
+
+    // -------------------------
+    // 5. Gyroscope Parallax (Device Orientation)
+    // -------------------------
+    const bgElement = document.getElementById('parallax-bg');
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientation', function(event) {
+        // -90 to 90 range approximately
+        const beta = event.beta;  // x-axis
+        const gamma = event.gamma; // y-axis
+        
+        if (beta !== null && gamma !== null) {
+          // Limit rotation to avoid breaking background
+          const x = Math.min(Math.max(gamma, -30), 30) / 2;
+          const y = Math.min(Math.max(beta - 45, -30), 30) / 2; // Subtracting 45 assuming normal holding angle
+          
+          bgElement.style.transform = `scale(1.1) translate(${x}px, ${y}px)`;
+        }
+      });
+    }
+
+    // -------------------------
+    // 6. Ambient Particles
+    // -------------------------
+    const particleContainer = document.getElementById('particles');
+    function createParticle() {
+      if(document.visibilityState === 'hidden') return;
+      const p = document.createElement('div');
+      p.classList.add('particle');
+      p.style.left = (Math.random() * 100) + 'vw';
+      const duration = (Math.random() * 4 + 4);
+      p.style.animationDuration = duration + 's';
+      const size = Math.random() * 3 + 2;
+      p.style.width = size + 'px';
+      p.style.height = size + 'px';
+      particleContainer.appendChild(p);
+      setTimeout(() => { if(p.parentNode) p.remove(); }, duration * 1000);
+    }
+    setInterval(createParticle, 350);
+
+    // -------------------------
+    // 7. Auto Scroll Feature
+    // -------------------------
+    let autoScrollInterval = null;
+    let isAutoScrolling = false;
+    
+    function toggleAutoScroll() {
+      const btn = document.getElementById('autoScrollBtn');
+      if (isAutoScrolling) {
+        clearInterval(autoScrollInterval);
+        isAutoScrolling = false;
+        btn.classList.remove('scrolling');
+        btn.querySelector('.nav-icon').innerText = '⏷';
+      } else {
+        isAutoScrolling = true;
+        btn.classList.add('scrolling');
+        btn.querySelector('.nav-icon').innerText = '⏸';
+        
+        if (navigator.vibrate) navigator.vibrate(30);
+
+        autoScrollInterval = setInterval(() => {
+          window.scrollBy({ top: 1, behavior: 'instant' });
+          
+          // Stop if reached bottom
+          if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 2) {
+            toggleAutoScroll();
+          }
+        }, 30); // 速度設定
+      }
+    }
+
+    // 画面タップでオートスクロール停止
+    document.getElementById('main-container').addEventListener('touchstart', () => {
+      if(isAutoScrolling) toggleAutoScroll();
+    }, {passive: true});
+  </script>
+</body>
+</html>
